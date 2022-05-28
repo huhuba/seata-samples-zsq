@@ -205,19 +205,22 @@ public class GlobalTransactionScanner extends AbstractAutoProxyCreator
                     return bean;
                 }
                 interceptor = null;
-                //check TCC proxy
+                //check TCC proxy:检查是否是TCC模式
                 if (TCCBeanParserUtils.isTccAutoProxy(bean, beanName, applicationContext)) {
                     //TCC interceptor， proxy bean of sofa:reference/dubbo:reference, and LocalTCC
+                    //如果是：添加TCC拦截器
                     interceptor = new TccActionInterceptor(TCCBeanParserUtils.getRemotingDesc(beanName));
                 } else {
+                    // 不是TCC模式
                     Class<?> serviceInterface = SpringProxyUtils.findTargetClass(bean);
                     Class<?>[] interfacesIfJdk = SpringProxyUtils.findInterfaces(bean);
-
+                    // 判断是否有相关事务注解，如果没有就不代理
                     if (!existsAnnotation(new Class[] {serviceInterface}) && !existsAnnotation(interfacesIfJdk)) {
                         return bean;
                     }
 
                     if (interceptor == null) {
+                        // 当发现存在全局事务注解标注的Bean，添加拦截器
                         interceptor = new GlobalTransactionalInterceptor(failureHandlerHook);
                     }
                 }
